@@ -1,0 +1,4 @@
+import jwt from 'jsonwebtoken'; import User from '../models/User.js'; import EventMember from '../models/EventMember.js';
+export async function protect(req,res,next){try{const token=req.headers.authorization?.split(' ')[1]; if(!token) throw Error(); const p=jwt.verify(token,process.env.JWT_SECRET); req.user=await User.findById(p.id); if(!req.user||req.user.disabled) throw Error(); next();}catch{res.status(401).json({success:false,message:'Authentication required'});}}
+export const allowRoles=(...roles)=>(req,res,next)=>roles.includes(req.member?.role)||req.user.platformRole==='admin'?next():res.status(403).json({success:false,message:'Insufficient permissions'});
+export async function eventMember(req,res,next){const id=req.params.eventId||req.body.event; req.member=await EventMember.findOne({event:id,user:req.user._id}); if(!req.member&&req.user.platformRole!=='admin') return res.status(403).json({success:false,message:'Event membership required'}); next();}

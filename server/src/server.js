@@ -1,0 +1,1 @@
+import 'dotenv/config'; import http from 'http'; import app from './app.js'; import {connectDb} from './config/db.js'; import {initSocket} from './config/socket.js'; const server=http.createServer(app);initSocket(server);connectDb().then(()=>server.listen(process.env.PORT||5000,()=>console.log('API ready'))).catch(e=>{console.error(e.message);process.exit(1)});

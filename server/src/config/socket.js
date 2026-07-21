@@ -1,0 +1,5 @@
+import { Server } from 'socket.io'; import jwt from 'jsonwebtoken'; import User from '../models/User.js';
+let io;
+export function initSocket(server) { io = new Server(server, { cors: { origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true } }); io.use(async (socket, next) => { try { const token = socket.handshake.auth.token; const payload = jwt.verify(token, process.env.JWT_SECRET); socket.user = await User.findById(payload.id).select('-password'); if (!socket.user) throw Error(); next(); } catch { next(new Error('Unauthorized socket')); } }); io.on('connection', socket => { socket.join(`user:${socket.user._id}`); socket.on('event:join', ({ eventId, teamId, zoneId }) => { socket.join(`event:${eventId}`); if (teamId) socket.join(`event:${eventId}:team:${teamId}`); if (zoneId) socket.join(`event:${eventId}:zone:${zoneId}`); }); }); return io; }
+export const getIo = () => io;
+export function emitEvent(eventId, name, data) { io?.to(`event:${eventId}`).emit(name, { eventId, data, timestamp: new Date() }); }
